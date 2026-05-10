@@ -1,5 +1,4 @@
 const express = require("express");
-const cors = require("cors");
 const pool = require("./db");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
@@ -12,16 +11,28 @@ const app = express();
 const SECRET = process.env.JWT_SECRET || "segredo_super_secreto";
 
 // ===============================
-// CORS (CORRIGIDO PARA RENDER + FRONTEND)
+// CORS MANUAL (FUNCIONA NA RENDER)
 // ===============================
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
 
-// resolve preflight (OPTIONS)
-app.options("*", cors());
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
+
+  // responde preflight
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
 
 app.use(express.json());
 
@@ -57,7 +68,9 @@ app.post("/register", async (req, res) => {
     const { email, senha } = req.body;
 
     if (!email || !senha) {
-      return res.status(400).json({ erro: "Email e senha obrigatórios" });
+      return res.status(400).json({
+        erro: "Email e senha obrigatórios"
+      });
     }
 
     const senhaCriptografada = await bcrypt.hash(senha, 10);
@@ -69,17 +82,21 @@ app.post("/register", async (req, res) => {
 
     res.json({
       mensagem: "Usuário criado",
-      usuario: result.rows[0],
+      usuario: result.rows[0]
     });
 
   } catch (error) {
     console.error(error);
 
     if (error.code === "23505") {
-      return res.status(400).json({ erro: "Email já cadastrado" });
+      return res.status(400).json({
+        erro: "Email já cadastrado"
+      });
     }
 
-    res.status(500).json({ erro: "Erro ao registrar" });
+    res.status(500).json({
+      erro: "Erro ao registrar"
+    });
   }
 });
 
@@ -96,21 +113,33 @@ app.post("/login", async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(400).json({ erro: "Usuário não encontrado" });
+      return res.status(400).json({
+        erro: "Usuário não encontrado"
+      });
     }
 
     const usuario = result.rows[0];
 
-    const senhaValida = await bcrypt.compare(senha, usuario.senha);
+    const senhaValida = await bcrypt.compare(
+      senha,
+      usuario.senha
+    );
 
     if (!senhaValida) {
-      return res.status(400).json({ erro: "Senha incorreta" });
+      return res.status(400).json({
+        erro: "Senha incorreta"
+      });
     }
 
     const token = jwt.sign(
-      { id: usuario.id, email: usuario.email },
+      {
+        id: usuario.id,
+        email: usuario.email
+      },
       SECRET,
-      { expiresIn: "1h" }
+      {
+        expiresIn: "1h"
+      }
     );
 
     res.json({
@@ -123,7 +152,10 @@ app.post("/login", async (req, res) => {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ erro: "Erro no login" });
+
+    res.status(500).json({
+      erro: "Erro no login"
+    });
   }
 });
 
@@ -141,7 +173,10 @@ app.get("/tarefas", autenticarToken, async (req, res) => {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ erro: "Erro ao buscar tarefas" });
+
+    res.status(500).json({
+      erro: "Erro ao buscar tarefas"
+    });
   }
 });
 
@@ -161,7 +196,10 @@ app.post("/tarefas", autenticarToken, async (req, res) => {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ erro: "Erro ao criar tarefa" });
+
+    res.status(500).json({
+      erro: "Erro ao criar tarefa"
+    });
   }
 });
 
@@ -181,7 +219,10 @@ app.put("/tarefas/:id", autenticarToken, async (req, res) => {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ erro: "Erro ao atualizar tarefa" });
+
+    res.status(500).json({
+      erro: "Erro ao atualizar tarefa"
+    });
   }
 });
 
@@ -195,19 +236,17 @@ app.delete("/tarefas/:id", autenticarToken, async (req, res) => {
       [req.params.id, req.user.id]
     );
 
-    res.json({ mensagem: "Tarefa removida" });
+    res.json({
+      mensagem: "Tarefa removida"
+    });
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ erro: "Erro ao deletar tarefa" });
+
+    res.status(500).json({
+      erro: "Erro ao deletar tarefa"
+    });
   }
 });
 
-// ===============================
-// START SERVER
-// ===============================
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log("Servidor rodando na porta " + PORT);
-});
+module.exports = app;
