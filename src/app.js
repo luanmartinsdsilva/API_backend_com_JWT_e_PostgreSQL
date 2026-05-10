@@ -11,7 +11,7 @@ const app = express();
 const SECRET = process.env.JWT_SECRET || "segredo_super_secreto";
 
 // ===============================
-// CORS MANUAL (FUNCIONA NA RENDER)
+// CORS MANUAL (RENDER + FRONTEND)
 // ===============================
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -45,14 +45,18 @@ function autenticarToken(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    return res.status(401).json({ erro: "Token não enviado" });
+    return res.status(401).json({
+      erro: "Token não enviado"
+    });
   }
 
   const token = authHeader.split(" ")[1];
 
   jwt.verify(token, SECRET, (err, user) => {
     if (err) {
-      return res.status(403).json({ erro: "Token inválido" });
+      return res.status(403).json({
+        erro: "Token inválido"
+      });
     }
 
     req.user = user;
