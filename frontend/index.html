@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Task App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div id="app">
+
+    <!-- LOGIN -->
+    <div id="loginPage" class="center">
+      <div class="card">
+        <h2>🔐 Login</h2>
+
+        <input id="email" placeholder="Email" />
+        <input id="senha" type="password" placeholder="Senha" />
+
+        <button onclick="login()">Entrar</button>
+        <button class="secondary" onclick="register()">Criar conta</button>
+
+        <p id="msg"></p>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="hidden">
+
+      <div class="topbar">
+        <h2>📋 Minhas Tarefas</h2>
+        <button onclick="logout()">Sair</button>
+      </div>
+
+      <div class="card task-input">
+        <input id="taskName" placeholder="Nova tarefa..." />
+        <button onclick="addTask()">Adicionar</button>
+      </div>
+
+      <div id="taskList"></div>
+
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
