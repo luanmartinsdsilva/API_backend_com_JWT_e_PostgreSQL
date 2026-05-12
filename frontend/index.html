@@ -1,50 +1,80 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Task App</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <div id="app">
+  <!-- LOGIN -->
+  <div id="loginPage" class="center">
 
-    <!-- LOGIN -->
-    <div id="loginPage" class="center">
-      <div class="card">
-        <h2>🔐 Login</h2>
+    <div class="card">
 
-        <input id="email" placeholder="Email" />
-        <input id="senha" type="password" placeholder="Senha" />
+      <h2>🚀 Task App</h2>
 
-        <button onclick="login()">Entrar</button>
-        <button class="secondary" onclick="register()">Criar conta</button>
+      <input id="email" placeholder="Email">
+      <input id="senha" type="password" placeholder="Senha">
 
-        <p id="msg"></p>
-      </div>
-    </div>
+      <button onclick="login()">Entrar</button>
+      <button class="secondary" onclick="register()">Criar conta</button>
 
-    <!-- DASHBOARD -->
-    <div id="dashboard" class="hidden">
-
-      <div class="topbar">
-        <h2>📋 Minhas Tarefas</h2>
-        <button onclick="logout()">Sair</button>
-      </div>
-
-      <div class="card task-input">
-        <input id="taskName" placeholder="Nova tarefa..." />
-        <button onclick="addTask()">Adicionar</button>
-      </div>
-
-      <div id="taskList"></div>
+      <p id="msg"></p>
 
     </div>
 
   </div>
 
-  <script src="app.js"></script>
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="hidden">
+
+    <div class="topbar">
+      <h2>📋 Minhas Tarefas</h2>
+      <button class="secondary" onclick="logout()">Sair</button>
+    </div>
+
+    <!-- STATS (NOVO) -->
+    <div class="stats">
+
+      <div class="stat">
+        <h3 id="total">0</h3>
+        <p>Total</p>
+      </div>
+
+      <div class="stat">
+        <h3 id="done">0</h3>
+        <p>Concluídas</p>
+      </div>
+
+      <div class="stat">
+        <h3 id="pending">0</h3>
+        <p>Pendentes</p>
+      </div>
+
+    </div>
+
+    <!-- INPUT -->
+    <div class="card task-input">
+      <input id="taskName" placeholder="Nova tarefa..." />
+      <button onclick="addTask()">Adicionar</button>
+    </div>
+
+    <!-- LISTA -->
+    <div id="taskList"></div>
+
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast"></div>
+
+    <script src="ui.js"></script>
+<script src="app.js"></script>
+
 </body>
 </html>
