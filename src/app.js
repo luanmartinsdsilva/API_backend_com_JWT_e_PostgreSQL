@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 const pool = require("./db");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
@@ -6,42 +7,20 @@ const bcrypt = require("bcrypt");
 const app = express();
 
 // ===============================
-// CONFIGURAÇÕES GLOBAIS
+// CONFIG
 // ===============================
 const SECRET = process.env.JWT_SECRET || "segredo_super_secreto";
 
-// ===============================
-// CORS MANUAL (RENDER + FRONTEND)
-// ===============================
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
-
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-
-  // responde preflight
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
-  next();
-});
-
+app.use(cors());
 app.use(express.json());
 
 console.log("API rodando com JWT + PostgreSQL");
 
 // ===============================
-// MIDDLEWARE DE AUTENTICAÇÃO
+// AUTH MIDDLEWARE
 // ===============================
 function autenticarToken(req, res, next) {
+
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -53,6 +32,7 @@ function autenticarToken(req, res, next) {
   const token = authHeader.split(" ")[1];
 
   jwt.verify(token, SECRET, (err, user) => {
+
     if (err) {
       return res.status(403).json({
         erro: "Token inválido"
@@ -60,6 +40,7 @@ function autenticarToken(req, res, next) {
     }
 
     req.user = user;
+
     next();
   });
 }
@@ -68,7 +49,9 @@ function autenticarToken(req, res, next) {
 // REGISTER
 // ===============================
 app.post("/register", async (req, res) => {
+
   try {
+
     const { email, senha } = req.body;
 
     if (!email || !senha) {
@@ -77,10 +60,13 @@ app.post("/register", async (req, res) => {
       });
     }
 
-    const senhaCriptografada = await bcrypt.hash(senha, 10);
+    const senhaCriptografada =
+      await bcrypt.hash(senha, 10);
 
     const result = await pool.query(
-      "INSERT INTO usuarios (email, senha) VALUES ($1, $2) RETURNING id, email",
+      `INSERT INTO usuarios (email, senha)
+       VALUES ($1, $2)
+       RETURNING id, email`,
       [email, senhaCriptografada]
     );
 
@@ -90,6 +76,7 @@ app.post("/register", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     if (error.code === "23505") {
@@ -108,7 +95,9 @@ app.post("/register", async (req, res) => {
 // LOGIN
 // ===============================
 app.post("/login", async (req, res) => {
+
   try {
+
     const { email, senha } = req.body;
 
     const result = await pool.query(
@@ -124,10 +113,8 @@ app.post("/login", async (req, res) => {
 
     const usuario = result.rows[0];
 
-    const senhaValida = await bcrypt.compare(
-      senha,
-      usuario.senha
-    );
+    const senhaValida =
+      await bcrypt.compare(senha, usuario.senha);
 
     if (!senhaValida) {
       return res.status(400).json({
@@ -155,6 +142,7 @@ app.post("/login", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
@@ -167,15 +155,18 @@ app.post("/login", async (req, res) => {
 // LISTAR TAREFAS
 // ===============================
 app.get("/tarefas", autenticarToken, async (req, res) => {
+
   try {
+
     const result = await pool.query(
-      "SELECT * FROM tarefas WHERE user_id = $1",
+      "SELECT * FROM tarefas WHERE user_id = $1 ORDER BY id DESC",
       [req.user.id]
     );
 
     res.json(result.rows);
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
@@ -188,17 +179,22 @@ app.get("/tarefas", autenticarToken, async (req, res) => {
 // CRIAR TAREFA
 // ===============================
 app.post("/tarefas", autenticarToken, async (req, res) => {
+
   try {
+
     const { nome } = req.body;
 
     const result = await pool.query(
-      "INSERT INTO tarefas (nome, user_id) VALUES ($1, $2) RETURNING *",
+      `INSERT INTO tarefas (nome, user_id)
+       VALUES ($1, $2)
+       RETURNING *`,
       [nome, req.user.id]
     );
 
     res.json(result.rows[0]);
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
@@ -208,20 +204,34 @@ app.post("/tarefas", autenticarToken, async (req, res) => {
 });
 
 // ===============================
-// ATUALIZAR TAREFA
+// ATUALIZAR TAREFA (PUT CORRIGIDO)
 // ===============================
 app.put("/tarefas/:id", autenticarToken, async (req, res) => {
+
   try {
-    const { nome } = req.body;
+
+    const { nome, concluida } = req.body;
 
     const result = await pool.query(
-      "UPDATE tarefas SET nome = $1 WHERE id = $2 AND user_id = $3 RETURNING *",
-      [nome, req.params.id, req.user.id]
+      `UPDATE tarefas
+       SET
+         nome = COALESCE($1, nome),
+         concluida = COALESCE($2, concluida)
+       WHERE id = $3
+       AND user_id = $4
+       RETURNING *`,
+      [
+        nome,
+        concluida,
+        req.params.id,
+        req.user.id
+      ]
     );
 
     res.json(result.rows[0]);
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
@@ -234,9 +244,13 @@ app.put("/tarefas/:id", autenticarToken, async (req, res) => {
 // DELETAR TAREFA
 // ===============================
 app.delete("/tarefas/:id", autenticarToken, async (req, res) => {
+
   try {
+
     await pool.query(
-      "DELETE FROM tarefas WHERE id = $1 AND user_id = $2",
+      `DELETE FROM tarefas
+       WHERE id = $1
+       AND user_id = $2`,
       [req.params.id, req.user.id]
     );
 
@@ -245,6 +259,7 @@ app.delete("/tarefas/:id", autenticarToken, async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
@@ -254,6 +269,3 @@ app.delete("/tarefas/:id", autenticarToken, async (req, res) => {
 });
 
 module.exports = app;
-
-
-https://api-backend-com-jwt-e-postgresql.onrender.com/login
